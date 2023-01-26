@@ -1,13 +1,20 @@
 const service = require("../service/service.js");
+const paginatedResults = require("../common/pagination.js");
 
 const get = async (req, res, next) => {
+  // const match = {};
+  // if (req.query.favorite) {
+  //   match.favorite = req.query.favorite === "true";
+  // }
+
   try {
     const results = await service.getAllContacts();
+
     res.json({
       status: "success",
       code: 200,
       data: {
-        contacts: results,
+        contacts: res.paginatedResults,
       },
     });
   } catch (e) {

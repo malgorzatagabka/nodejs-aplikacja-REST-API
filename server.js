@@ -9,8 +9,12 @@ app.use(express.json());
 app.use(cors());
 
 const contactsRouter = require("./api/index");
+const usersRouter = require("./api/userApi");
 
-app.use("/api", contactsRouter);
+require("./config/passport");
+
+app.use("/api/contacts", contactsRouter);
+app.use("/api/users", usersRouter);
 
 app.use((_, res, __) => {
   res.status(404).json({

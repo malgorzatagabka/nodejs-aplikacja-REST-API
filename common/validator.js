@@ -38,6 +38,21 @@ const contactValidationStatus = Joi.object({
 });
 
 
+const findByEmail = Joi.object({
+	email: Joi.string()
+		.email({
+			minDomainSegments: 2,
+			tlds: { allow: ["com", "net", "pl"] },
+		})
+		.required(),
+	password: Joi.string().required(),
+});
+
+const subscription = Joi.object({
+	subscription: Joi.string().valid("starter", "pro", "business").required(),
+});
+
+
 const validate = (schema, obj, next, res) => {
   const { error } = schema.validate(obj);
   if (error) {
@@ -62,4 +77,12 @@ module.exports.updateContact = (req, res, next) => {
 
 module.exports.updateStatus = (req, res, next) => {
 	return validate(contactValidationStatus, req.body, next, res);
+};
+
+module.exports.findUserByEmail = (req, res, next) => {
+	return validate(findByEmail, req.body, next, res);
+};
+
+module.exports.updateSubscription = (req, res, next) => {
+	return validate(subscription, req.body, next, res);
 };
