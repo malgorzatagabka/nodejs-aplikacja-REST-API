@@ -6,7 +6,7 @@ const auth = require("../config/authMiddleware")
 const Contact = require("../service/schemas/contact")
 const paginatedResults = require("../common/pagination.js")
 
-router.get("/", paginatedResults(Contact),ctrlContact.get);
+router.get("/",auth, paginatedResults(Contact),ctrlContact.get);
 
 router.get("/:contactId", ctrlContact.getById);
 
