@@ -1,6 +1,6 @@
 const User = require("../service/schemas/user.js");
 
-const findUserbyEmail = async (email) => {
+const findUserByEmail = async (email) => {
   return User.findOne({ email });
 };
 
@@ -13,7 +13,7 @@ const updateSubscription = async (id, body) =>
   User.findByIdAndUpdate(id, { subscription: body }, { new: true });
 
 module.exports = {
-  findUserbyEmail,
+  findUserByEmail,
   addToken,
   logOut,
   updateSubscription,

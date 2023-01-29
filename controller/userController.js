@@ -1,15 +1,23 @@
 const service = require("../service/users.js");
 const User = require("../service/schemas/user.js");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
 
 require("dotenv").config();
 const secret = process.env.JWT_SECRET;
 
 const signUp = async (req, res, next) => {
   const { email, password } = req.body;
-  const user = await service.findUserbyEmail(email);
+  const user = await service.findUserByEmail(email);
+  
   if (user) return res.status(409).json({ message: "Email in use" });
+ 
   try {
+    const avatar = gravatar.url(req.body.email, {
+        s: "200", //size
+        r: "pg", //rating
+        d: "mm" //default
+      })
     const newUser = new User(req.body);
     newUser.setPassword(password);
     await newUser.save();
@@ -18,6 +26,7 @@ const signUp = async (req, res, next) => {
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatar,
       },
     });
   } catch (e) {
@@ -29,7 +38,7 @@ const signUp = async (req, res, next) => {
 const login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
-    const user = await service.findUserbyEmail(email);
+    const user = await service.findUserByEmail(email);
     if (!user || !user.validPassword(password))
       return res.status(401).json({ message: "Email or password is wrong" });
     const { id, subscription } = user;
@@ -105,3 +114,8 @@ module.exports = {
   currentUser,
   updateSubs,
 };
+
+
+
+
+
