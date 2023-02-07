@@ -7,7 +7,7 @@ const get = async (req, res, next) => {
     let results = await service.getAllContacts();
     const { favorite, page, limit } = req.query;
     
-    if (favorite === "true" || favorite === "false") {
+    if (favorite) {
       results = await service.getAllContacts({ favorite: favorite });
     }
     if (page && limit) {

@@ -1,7 +1,14 @@
+const path = require("path");
+const fs = require("fs/promises");
+
 const service = require("../service/users.js");
 const User = require("../service/schemas/user.js");
+const { AVATAR_DIRECTORY } = require("../config/upload.js");
+//const { sleep } = require("../config/createFolders");
+
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
+const Jimp = require("jimp");
 
 require("dotenv").config();
 const secret = process.env.JWT_SECRET;
@@ -9,16 +16,16 @@ const secret = process.env.JWT_SECRET;
 const signUp = async (req, res, next) => {
   const { email, password } = req.body;
   const user = await service.findUserByEmail(email);
-  
+
   if (user) return res.status(409).json({ message: "Email in use" });
- 
+
   try {
-    const avatar = gravatar.url(req.body.email, {
-        s: "200", //size
-        r: "pg", //rating
-        d: "mm" //default
-      })
-    const newUser = new User(req.body);
+    const avatarURL = gravatar.url(email, {
+      s: "200", //size
+      r: "pg", //rating
+      d: "mm", //default
+    });
+    const newUser = new User({ email, avatarURL });
     newUser.setPassword(password);
     await newUser.save();
     return res.status(201).json({
@@ -26,7 +33,7 @@ const signUp = async (req, res, next) => {
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
-        avatar,
+        avatarURL,
       },
     });
   } catch (e) {
@@ -107,15 +114,36 @@ const updateSubs = async (req, res, next) => {
   }
 };
 
+const avatarUpdate = async (req, res, next) => {
+  const { path: temporaryName, filename } = req.file;
+  const avatarURL = path.join(AVATAR_DIRECTORY, filename);
+
+  Jimp.read(temporaryName)
+    .then((avatar) => {
+      return avatar
+        .resize(250, 250) // resize
+        .write(AVATAR_DIRECTORY); // save
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+
+  try {
+    //await sleep(5000);
+    await fs.rename(temporaryName, avatarURL);
+    await service.updateAvatar();
+  } catch (e) {
+    await fs.unlink(temporaryName);
+    next(e);
+  }
+  res.status(200).json({ avatarURL });
+};
+
 module.exports = {
   signUp,
   login,
   logout,
   currentUser,
   updateSubs,
+  avatarUpdate,
 };
-
-
-
-
-
