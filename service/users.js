@@ -14,6 +14,18 @@ const updateSubscription = async (id, body) =>
 
 const updateAvatar = async (id, avatarURL) => User.findByIdAndUpdate(id, { avatarURL });
  
+const verifyToken = (verificationToken) =>User.findOneAndUpdate(
+  { verificationToken }, { verify: true, verificationToken: null });
+
+  
+const emailVerification = async (email) => {
+	const user = await findUserByEmail(email);
+	return user ? user.verify : false;
+};
+const resendVerification = async (email) => {
+	const user = await findUserByEmail(email);
+	await sendEmail(email, user.verificationToken);
+};
 
 
 module.exports = {
@@ -22,4 +34,5 @@ module.exports = {
   logOut,
   updateSubscription,
   updateAvatar,
+  verifyToken,
 };
