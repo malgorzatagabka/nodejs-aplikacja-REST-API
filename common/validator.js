@@ -13,7 +13,7 @@ const contactValidation = Joi.object({
       "string.pattern.base": `Phone number must be written as 777-777-777.`,
     })
     .required(),
-  favorite: Joi.boolean().optional()
+  favorite: Joi.boolean().optional(),
 });
 
 const contactValidationUpdate = Joi.object({
@@ -34,24 +34,31 @@ const contactValidationUpdate = Joi.object({
 }).min(1);
 
 const contactValidationStatus = Joi.object({
-	favorite: Joi.boolean().required(),
+  favorite: Joi.boolean().required(),
 });
 
-
 const findByEmail = Joi.object({
-	email: Joi.string()
-		.email({
-			minDomainSegments: 2,
-			tlds: { allow: ["com", "net", "pl"] },
-		})
-		.required(),
-	password: Joi.string().required(),
+  email: Joi.string()
+    .email({
+      minDomainSegments: 2,
+      tlds: { allow: ["com", "net", "pl"] },
+    })
+    .required(),
+  password: Joi.string().required(),
 });
 
 const subscription = Joi.object({
-	subscription: Joi.string().valid("starter", "pro", "business").required(),
+  subscription: Joi.string().valid("starter", "pro", "business").required(),
 });
 
+const emailVerification = Joi.object({
+  email: Joi.string()
+    .email({
+      minDomainSegments: 2,
+      tlds: { allow: ["com", "net", "pl"] },
+    })
+    .required(),
+});
 
 const validate = (schema, obj, next, res) => {
   const { error } = schema.validate(obj);
@@ -67,17 +74,15 @@ const validate = (schema, obj, next, res) => {
   next();
 };
 
-module.exports.createContact = (req, res, next) => validate(contactValidation, req.body, next, res);
-
-
-module.exports.updateContact = (req, res, next) => validate(contactValidationUpdate, req.body, next, res);
-
-
-module.exports.updateStatus = (req, res, next) => validate(contactValidationStatus, req.body, next, res);
-
-
-module.exports.findUserByEmail = (req, res, next) => validate(findByEmail, req.body, next, res);
-
-
+module.exports.createContact = (req, res, next) =>
+  validate(contactValidation, req.body, next, res);
+module.exports.updateContact = (req, res, next) =>
+  validate(contactValidationUpdate, req.body, next, res);
+module.exports.updateStatus = (req, res, next) =>
+  validate(contactValidationStatus, req.body, next, res);
+module.exports.findUserByEmail = (req, res, next) =>
+  validate(findByEmail, req.body, next, res);
 module.exports.updateSubscription = (req, res, next) =>
-validate(subscription, req.body, next, res);
+  validate(subscription, req.body, next, res);
+module.exports.emailVerification = (req, res, next) =>
+  validate(emailVerification, req.body, next, res);

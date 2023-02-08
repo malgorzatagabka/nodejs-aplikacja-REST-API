@@ -4,11 +4,12 @@ const fs = require("fs/promises");
 const service = require("../service/users.js");
 const User = require("../service/schemas/user.js");
 const { AVATAR_DIRECTORY } = require("../config/upload.js");
-//const { sleep } = require("../config/createFolders");
+const { sendVerificationEmail } = require("../config/sendgrid");
 
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
 const Jimp = require("jimp");
+const { v4 } = require("uuid");
 
 require("dotenv").config();
 const secret = process.env.JWT_SECRET;
@@ -25,15 +26,19 @@ const signUp = async (req, res, next) => {
       r: "pg", //rating
       d: "mm", //default
     });
-    const newUser = new User({ email, avatarURL });
+    const verificationToken = v4();
+    const newUser = new User({ email, avatarURL, verificationToken });
     newUser.setPassword(password);
     await newUser.save();
+    await sendVerificationEmail(email, verificationToken);
+
     return res.status(201).json({
       message: "Registration successful",
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
         avatarURL,
+        verificationToken,
       },
     });
   } catch (e) {
@@ -46,6 +51,7 @@ const login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     const user = await service.findUserByEmail(email);
+
     if (!user || !user.validPassword(password))
       return res.status(401).json({ message: "Email or password is wrong" });
     const { id, subscription } = user;
@@ -57,13 +63,7 @@ const login = async (req, res, next) => {
     const token = jwt.sign(payload, secret, { expiresIn: "3h" });
 
     await service.addToken(id, token);
-    res.status(200).json({
-      token,
-      user: {
-        email,
-        subscription,
-      },
-    });
+    res.status(200).json({ token, user: { email, subscription } });
   } catch (e) {
     next(e);
   }
@@ -120,16 +120,13 @@ const avatarUpdate = async (req, res, next) => {
 
   Jimp.read(temporaryName)
     .then((avatar) => {
-      return avatar
-        .resize(250, 250) // resize
-        .write(AVATAR_DIRECTORY); // save
+      return avatar.resize(250, 250).write(AVATAR_DIRECTORY);
     })
     .catch((err) => {
       console.error(err);
     });
 
   try {
-    //await sleep(5000);
     await fs.rename(temporaryName, avatarURL);
     await service.updateAvatar();
   } catch (e) {
@@ -139,6 +136,39 @@ const avatarUpdate = async (req, res, next) => {
   res.status(200).json({ avatarURL });
 };
 
+const sendEmailConfirmation = async (req, res, next) => {
+  const { verificationToken } = req.params;
+  try {
+    const user = await service.verifyToken(verificationToken);
+
+    if (user) {
+      res.status(200).json({ message: "Verification successful" });
+    } else {
+      res.status(404).json({ message: `User not found` });
+    }
+  } catch (e) {
+    next(e);
+  }
+};
+
+const resendEmailConfirmation = async (req, res, next) => {
+  const { email } = req.body;
+  try {
+    const user = await service.findUserByEmail(email);
+
+    if (!user) {
+      res.status(404).json({ message: `User not found`});
+    }
+    if (user.verify) {
+      res.status(400).json({ message: `Verification has already been passed`, data: "Bad request"});
+    }
+    await sendVerificationEmail(email, user.verificationToken);
+    res.status(200).json({ message: "Verification email sent" });
+  } catch (e) {
+    next(e);
+  }
+};
+
 module.exports = {
   signUp,
   login,
@@ -146,4 +176,6 @@ module.exports = {
   currentUser,
   updateSubs,
   avatarUpdate,
+  sendEmailConfirmation,
+  resendEmailConfirmation,
 };
