@@ -13,6 +13,4 @@ const createFolderIsNotExist = async (folder) => {
   }
 };
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-module.exports = { createFolderIsNotExist, sleep };
+module.exports = { createFolderIsNotExist };
